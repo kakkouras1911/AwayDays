@@ -1,5 +1,6 @@
 package com.awaydays.api.controller;
 
+import com.awaydays.api.dto.request.LoginRequest;
 import com.awaydays.api.dto.request.SignUpRequest;
 import com.awaydays.api.dto.response.AuthResponse;
 import com.awaydays.api.service.AuthService;
@@ -24,6 +25,17 @@ public class AuthController {
             return ResponseEntity.status(HttpStatus.CREATED).body(response);
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest()
+                    .body(new AuthResponse(null, null, null, e.getMessage()));
+        }
+    }
+
+    @PostMapping("/login")
+    public ResponseEntity<AuthResponse> login(@Valid @RequestBody LoginRequest request) {
+        try {
+            AuthResponse response = authService.login(request);
+            return ResponseEntity.ok(response);
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                     .body(new AuthResponse(null, null, null, e.getMessage()));
         }
     }

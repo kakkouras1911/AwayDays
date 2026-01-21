@@ -1,5 +1,6 @@
 package com.awaydays.api.service;
 
+import com.awaydays.api.dto.request.LoginRequest;
 import com.awaydays.api.dto.request.SignUpRequest;
 import com.awaydays.api.dto.response.AuthResponse;
 import com.awaydays.api.model.User;
@@ -45,6 +46,30 @@ public class AuthService {
                 savedUser.getUsername(),
                 savedUser.getEmail(),
                 "User registered successfully"
+        );
+    }
+
+    public AuthResponse login(LoginRequest request) {
+        // Find user by email
+        User user = userRepository.findByEmail(request.getEmail())
+                .orElseThrow(() -> new RuntimeException("Invalid email or password"));
+
+        // Check if account is active
+        if (!user.getIsActive()) {
+            throw new RuntimeException("Account is deactivated");
+        }
+
+        // Verify password
+        if (!passwordEncoder.matches(request.getPassword(), user.getPasswordHash())) {
+            throw new RuntimeException("Invalid email or password");
+        }
+
+        // Return success response
+        return new AuthResponse(
+                user.getId(),
+                user.getUsername(),
+                user.getEmail(),
+                "Login successful"
         );
     }
 }

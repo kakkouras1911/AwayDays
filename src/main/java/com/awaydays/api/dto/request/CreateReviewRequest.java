@@ -7,7 +7,6 @@ import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
-import java.util.Map;
 import java.util.UUID;
 
 @Data
@@ -33,8 +32,24 @@ public class CreateReviewRequest {
     @DecimalMax(value = "5.0", message = "Rating must be at most 5.0")
     private BigDecimal overallRating;
 
-    // Category ratings (optional but recommended)
-    // Key = category name (food, atmosphere, etc.)
-    // Value = rating (1.0 - 5.0)
-    private Map<String, BigDecimal> categoryRatings;
+    // Category ratings - using individual fields instead of a map
+    @DecimalMin(value = "1.0", message = "Food rating must be at least 1.0")
+    @DecimalMax(value = "5.0", message = "Food rating must be at most 5.0")
+    private BigDecimal foodRating;
+
+    @DecimalMin(value = "1.0", message = "Atmosphere rating must be at least 1.0")
+    @DecimalMax(value = "5.0", message = "Atmosphere rating must be at most 5.0")
+    private BigDecimal atmosphereRating;
+
+    @DecimalMin(value = "1.0", message = "Hospitality rating must be at least 1.0")
+    @DecimalMax(value = "5.0", message = "Hospitality rating must be at most 5.0")
+    private BigDecimal hospitalityRating;
+
+    @DecimalMin(value = "1.0", message = "Facilities rating must be at least 1.0")
+    @DecimalMax(value = "5.0", message = "Facilities rating must be at most 5.0")
+    private BigDecimal facilitiesRating;
+
+    @DecimalMin(value = "1.0", message = "Accessibility rating must be at least 1.0")
+    @DecimalMax(value = "5.0", message = "Accessibility rating must be at most 5.0")
+    private BigDecimal accessibilityRating;
 }

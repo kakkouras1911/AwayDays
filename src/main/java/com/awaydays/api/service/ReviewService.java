@@ -14,6 +14,7 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.HashMap;
 import java.util.List;
+import java.util.ArrayList;
 import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -25,11 +26,6 @@ public class ReviewService {
     private final ReviewRepository reviewRepository;
     private final StadiumRepository stadiumRepository;
     private final UserRepository userRepository;
-
-    // Valid category names
-    private static final List<String> VALID_CATEGORIES = List.of(
-            "food", "atmosphere", "hospitality", "facilities", "accessibility"
-    );
 
     /**
      * Create a new review
@@ -56,38 +52,39 @@ public class ReviewService {
         review.setOverallRating(request.getOverallRating());
         review.setIsFlagged(false);
 
-        // Add category ratings if provided
+        // Add fixed category ratings
         BigDecimal calculatedOverall = null;
-        if (request.getCategoryRatings() != null && !request.getCategoryRatings().isEmpty()) {
+        List<BigDecimal> ratings = new ArrayList<>();
+        
+        // Add all 5 category ratings (if provided)
+        if (request.getFoodRating() != null) {
+            review.addCategoryRating(new CategoryRating("food", request.getFoodRating()));
+            ratings.add(request.getFoodRating());
+        }
+        if (request.getAtmosphereRating() != null) {
+            review.addCategoryRating(new CategoryRating("atmosphere", request.getAtmosphereRating()));
+            ratings.add(request.getAtmosphereRating());
+        }
+        if (request.getHospitalityRating() != null) {
+            review.addCategoryRating(new CategoryRating("hospitality", request.getHospitalityRating()));
+            ratings.add(request.getHospitalityRating());
+        }
+        if (request.getFacilitiesRating() != null) {
+            review.addCategoryRating(new CategoryRating("facilities", request.getFacilitiesRating()));
+            ratings.add(request.getFacilitiesRating());
+        }
+        if (request.getAccessibilityRating() != null) {
+            review.addCategoryRating(new CategoryRating("accessibility", request.getAccessibilityRating()));
+            ratings.add(request.getAccessibilityRating());
+        }
+        
+        // Calculate average overall rating from provided category ratings
+        if (!ratings.isEmpty()) {
             BigDecimal sum = BigDecimal.ZERO;
-            int count = 0;
-            
-            for (Map.Entry<String, BigDecimal> entry : request.getCategoryRatings().entrySet()) {
-                String category = entry.getKey().toLowerCase();
-                BigDecimal rating = entry.getValue();
-
-                // Validate category
-                if (!VALID_CATEGORIES.contains(category)) {
-                    throw new RuntimeException("Invalid category: " + category);
-                }
-
-                // Validate rating range
-                if (rating.compareTo(BigDecimal.ONE) < 0 || rating.compareTo(BigDecimal.valueOf(5)) > 0) {
-                    throw new RuntimeException("Rating must be between 1.0 and 5.0");
-                }
-
-                CategoryRating categoryRating = new CategoryRating(category, rating);
-                review.addCategoryRating(categoryRating);
-                
-                // Add to sum for average calculation
+            for (BigDecimal rating : ratings) {
                 sum = sum.add(rating);
-                count++;
             }
-            
-            // Calculate average overall rating
-            if (count > 0) {
-                calculatedOverall = sum.divide(BigDecimal.valueOf(count), 1, RoundingMode.HALF_UP);
-            }
+            calculatedOverall = sum.divide(BigDecimal.valueOf(ratings.size()), 1, RoundingMode.HALF_UP);
         }
         
         // Use calculated overall rating if category ratings provided, otherwise use user's input
