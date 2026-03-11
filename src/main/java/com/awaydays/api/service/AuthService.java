@@ -5,6 +5,7 @@ import com.awaydays.api.dto.request.SignUpRequest;
 import com.awaydays.api.dto.response.AuthResponse;
 import com.awaydays.api.model.User;
 import com.awaydays.api.repository.UserRepository;
+import com.awaydays.api.security.JwtUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -16,6 +17,7 @@ public class AuthService {
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+    private final JwtUtil jwtUtil;
 
     @Transactional
     public AuthResponse signUp(SignUpRequest request) {
@@ -40,11 +42,19 @@ public class AuthService {
         // Save user
         User savedUser = userRepository.save(user);
 
-        // Return response
+        // Generate JWT token
+        String token = jwtUtil.generateToken(
+                savedUser.getId(),
+                savedUser.getUsername(),
+                savedUser.getEmail()
+        );
+
+        // Return response with token
         return new AuthResponse(
                 savedUser.getId(),
                 savedUser.getUsername(),
                 savedUser.getEmail(),
+                token,
                 "User registered successfully"
         );
     }
@@ -64,11 +74,19 @@ public class AuthService {
             throw new RuntimeException("Invalid email or password");
         }
 
-        // Return success response
+        // Generate JWT token
+        String token = jwtUtil.generateToken(
+                user.getId(),
+                user.getUsername(),
+                user.getEmail()
+        );
+
+        // Return success response with token
         return new AuthResponse(
                 user.getId(),
                 user.getUsername(),
                 user.getEmail(),
+                token,
                 "Login successful"
         );
     }

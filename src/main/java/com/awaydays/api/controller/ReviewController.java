@@ -7,8 +7,10 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
-
+import java.util.Map;
 import java.util.List;
 import java.util.UUID;
 
@@ -22,20 +24,21 @@ public class ReviewController {
 
     /**
      * POST /api/reviews - Create a new review
-     * For now, we'll pass userId in the request body
-     * Later, we'll get it from JWT token
+     * UserId is extracted from JWT token automatically
      */
     @PostMapping
-    public ResponseEntity<ReviewResponse> createReview(
-            @RequestParam UUID userId, // Temporary - will come from JWT later
+    public ResponseEntity<?> createReview(
             @Valid @RequestBody CreateReviewRequest request
     ) {
         try {
+            // Get userId from JWT token (set by JwtAuthenticationFilter)
+            UUID userId = getCurrentUserId();
+            
             ReviewResponse response = reviewService.createReview(userId, request);
             return ResponseEntity.status(HttpStatus.CREATED).body(response);
         } catch (RuntimeException e) {
-            // Return error message
-            return ResponseEntity.badRequest().build();
+            // Return error message with details
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
         }
     }
 
@@ -72,17 +75,29 @@ public class ReviewController {
 
     /**
      * DELETE /api/reviews/{id} - Delete a review
+     * UserId is extracted from JWT token automatically
      */
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteReview(
-            @PathVariable UUID id,
-            @RequestParam UUID userId // Temporary - will come from JWT later
-    ) {
+    public ResponseEntity<Void> deleteReview(@PathVariable UUID id) {
         try {
+            // Get userId from JWT token
+            UUID userId = getCurrentUserId();
+            
             reviewService.deleteReview(id, userId);
             return ResponseEntity.noContent().build();
         } catch (RuntimeException e) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
         }
+    }
+
+    /**
+     * Helper method to extract userId from JWT token
+     */
+    private UUID getCurrentUserId() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication != null && authentication.getPrincipal() instanceof UUID) {
+            return (UUID) authentication.getPrincipal();
+        }
+        throw new RuntimeException("User not authenticated");
     }
 }
