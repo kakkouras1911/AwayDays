@@ -3,6 +3,11 @@ package com.awaydays.api.controller;
 import com.awaydays.api.dto.request.CreateReviewRequest;
 import com.awaydays.api.dto.response.ReviewResponse;
 import com.awaydays.api.service.ReviewService;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+
+import org.springframework.http.MediaType;
+import org.springframework.web.multipart.MultipartFile;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -10,6 +15,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
+
+
 import java.util.Map;
 import java.util.List;
 import java.util.UUID;
@@ -41,7 +48,30 @@ public class ReviewController {
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
         }
     }
+   /**
+ * POST /api/reviews/with-photos - Create a new review with photos
+ */
+@PostMapping(value = "/with-photos", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+public ResponseEntity<?> createReviewWithPhotos(
+        @RequestPart("review") String reviewJson,
+        @RequestPart(value = "photos", required = false) List<MultipartFile> photos
+) {
+    try {
+        UUID userId = getCurrentUserId();
 
+        // Parse JSON manually
+        ObjectMapper objectMapper = new ObjectMapper();
+        objectMapper.registerModule(new JavaTimeModule());
+        CreateReviewRequest request = objectMapper.readValue(reviewJson, CreateReviewRequest.class);
+
+        ReviewResponse response = reviewService.createReviewWithPhotos(userId, request, photos);
+        return ResponseEntity.status(HttpStatus.CREATED).body(response);
+    } catch (RuntimeException e) {
+        return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+    } catch (Exception e) {
+        return ResponseEntity.badRequest().body(Map.of("error", "Invalid request format: " + e.getMessage()));
+    }
+}
     /**
      * GET /api/reviews/{id} - Get review by ID
      */

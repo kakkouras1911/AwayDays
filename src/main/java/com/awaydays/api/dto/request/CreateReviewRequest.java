@@ -4,7 +4,7 @@ import jakarta.validation.constraints.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-
+import java.util.List;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.UUID;
@@ -52,4 +52,6 @@ public class CreateReviewRequest {
     @DecimalMin(value = "1.0", message = "Accessibility rating must be at least 1.0")
     @DecimalMax(value = "5.0", message = "Accessibility rating must be at most 5.0")
     private BigDecimal accessibilityRating;
+
+    private List<String> photoCaptions;
 }
