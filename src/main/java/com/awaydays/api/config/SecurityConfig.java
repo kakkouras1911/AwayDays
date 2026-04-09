@@ -25,6 +25,7 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/auth/**").permitAll() // Allow signup/login without auth
                         .requestMatchers("/api/stadiums/**").permitAll() // Allow public stadium browsing
+                        .requestMatchers("/uploads/**").permitAll() // Allow public access to uploaded images
                         .anyRequest().authenticated() // Everything else requires JWT
                 )
                 .sessionManagement(session -> session
