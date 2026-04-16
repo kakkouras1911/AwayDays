@@ -47,12 +47,12 @@ public class Review {
     private Boolean isFlagged = false;
 
     @CreationTimestamp
-    @Column(name = "created_at", updatable = false, nullable = false)
-    private LocalDateTime createdAt;
+@Column(name = "created_at", insertable = false, updatable = false, nullable = false)
+private LocalDateTime createdAt;
 
-    @UpdateTimestamp
-    @Column(name = "updated_at", nullable = false)
-    private LocalDateTime updatedAt;
+@UpdateTimestamp
+@Column(name = "updated_at", insertable = false, updatable = false, nullable = false)
+private LocalDateTime updatedAt;
     // Relationship with category ratings
     @OneToMany(mappedBy = "review", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<CategoryRating> categoryRatings = new ArrayList<>();

@@ -3,7 +3,7 @@ package com.awaydays.api.dto.response;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-
+import java.util.List;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -27,4 +27,5 @@ public class ReviewResponse {
     private Map<String, BigDecimal> categoryRatings; // category -> rating
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
+    private List<String> photoUrls;
 }

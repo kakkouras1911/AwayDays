@@ -175,32 +175,39 @@ public class ReviewService {
      * Convert Review entity to ReviewResponse DTO
      */
     private ReviewResponse convertToResponse(Review review) {
-        Map<String, BigDecimal> categoryRatingsMap = new HashMap<>();
-        for (CategoryRating cr : review.getCategoryRatings()) {
-            categoryRatingsMap.put(cr.getCategory(), cr.getRating());
-        }
+    Map<String, BigDecimal> categoryRatingsMap = new HashMap<>();
+    for (CategoryRating cr : review.getCategoryRatings()) {
+        categoryRatingsMap.put(cr.getCategory(), cr.getRating());
+    }
 
-        String username = userRepository.findById(review.getUserId())
-                .map(user -> user.getUsername())
-                .orElse("Unknown User");
+    String username = userRepository.findById(review.getUserId())
+            .map(user -> user.getUsername())
+            .orElse("Unknown User");
 
-        String stadiumName = stadiumRepository.findById(review.getStadiumId())
-                .map(stadium -> stadium.getName())
-                .orElse("Unknown Stadium");
+    String stadiumName = stadiumRepository.findById(review.getStadiumId())
+            .map(stadium -> stadium.getName())
+            .orElse("Unknown Stadium");
 
-        return new ReviewResponse(
-                review.getId(),
-                review.getUserId(),
-                username,
-                review.getStadiumId(),
-                stadiumName,
-                review.getTitle(),
-                review.getContent(),
-                review.getVisitDate(),
-                review.getOverallRating(),
-                categoryRatingsMap,
-                review.getCreatedAt(),
-                review.getUpdatedAt()
-        );
+    List<String> photoUrls = photoRepository.findByReviewIdOrderByDisplayOrderAsc(review.getId())
+            .stream()
+            .map(Photo::getUrl)
+            .collect(Collectors.toList());
+
+    return new ReviewResponse(
+            review.getId(),
+            review.getUserId(),
+            username,
+            review.getStadiumId(),
+            stadiumName,
+            review.getTitle(),
+            review.getContent(),
+            review.getVisitDate(),
+            review.getOverallRating(),
+            categoryRatingsMap,
+            review.getCreatedAt(),
+            review.getUpdatedAt(),
+            photoUrls
+    );
+
     }
 }
