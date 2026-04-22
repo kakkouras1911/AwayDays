@@ -22,24 +22,28 @@ public class CommentService {
     private final ReviewRepository reviewRepository;
     private final UserRepository userRepository;
 
-    @Transactional
-    public CommentResponse addComment(UUID reviewId, UUID userId, CreateCommentRequest request) {
-        // Check review exists
-        if (!reviewRepository.existsById(reviewId)) {
-            throw new RuntimeException("Review not found");
-        }
-
-        Comment comment = new Comment();
-        comment.setReviewId(reviewId);
-        comment.setUserId(userId);
-        comment.setContent(request.getContent());
-
-        Comment saved = commentRepository.save(comment);
-        saved = commentRepository.findById(saved.getId())
-                .orElse(saved);
-
-        return convertToResponse(saved);
+   @Transactional
+public CommentResponse addComment(UUID reviewId, UUID userId, CreateCommentRequest request) {
+    if (!reviewRepository.existsById(reviewId)) {
+        throw new RuntimeException("Review not found");
     }
+
+    Comment comment = new Comment();
+    comment.setReviewId(reviewId);
+    comment.setUserId(userId);
+    comment.setContent(request.getContent());
+    comment.setIsFlagged(false);
+
+    commentRepository.save(comment);
+    
+    // Flush to DB first, then reload to get timestamps
+    commentRepository.flush();
+    
+    Comment saved = commentRepository.findById(comment.getId())
+            .orElseThrow(() -> new RuntimeException("Comment not found after save"));
+
+    return convertToResponse(saved);
+}
 
     public List<CommentResponse> getCommentsByReview(UUID reviewId) {
         if (!reviewRepository.existsById(reviewId)) {
@@ -52,16 +56,17 @@ public class CommentService {
     }
 
     @Transactional
-    public void deleteComment(UUID commentId, UUID userId) {
-        Comment comment = commentRepository.findById(commentId)
-                .orElseThrow(() -> new RuntimeException("Comment not found"));
+public void deleteComment(UUID commentId, UUID userId, boolean isAdmin) {
+    Comment comment = commentRepository.findById(commentId)
+            .orElseThrow(() -> new RuntimeException("Comment not found"));
 
-        if (!comment.getUserId().equals(userId)) {
-            throw new RuntimeException("You can only delete your own comments");
-        }
-
-        commentRepository.delete(comment);
+    if (!isAdmin && !comment.getUserId().equals(userId)) {
+        throw new RuntimeException("You can only delete your own comments");
     }
+
+    commentRepository.delete(comment);
+}
+    
 
     private CommentResponse convertToResponse(Comment comment) {
         String username = userRepository.findById(comment.getUserId())

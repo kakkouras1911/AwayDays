@@ -26,18 +26,18 @@ public class JwtUtil {
     /**
      * Generate JWT token for a user
      */
-    public String generateToken(UUID userId, String username, String email) {
-        return Jwts.builder()
-                .claim("userId", userId.toString())
-                .claim("username", username)
-                .claim("email", email)
-                .subject(userId.toString())
-                .issuedAt(new Date())
-                .expiration(new Date(System.currentTimeMillis() + expiration))
-                .signWith(getSigningKey())
-                .compact();
-    }
-
+    public String generateToken(UUID userId, String username, String email, String role) {
+    return Jwts.builder()
+            .claim("userId", userId.toString())
+            .claim("username", username)
+            .claim("email", email)
+            .claim("role", role)
+            .subject(userId.toString())
+            .issuedAt(new Date())
+            .expiration(new Date(System.currentTimeMillis() + expiration))
+            .signWith(getSigningKey())
+            .compact();
+}
     /**
      * Extract userId from token
      */
@@ -111,4 +111,10 @@ public class JwtUtil {
             return false;
         }
     }
+    /**
+ * Extract role from token
+ */
+public String extractRole(String token) {
+    return extractAllClaims(token).get("role", String.class);
+}
 }

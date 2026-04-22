@@ -108,17 +108,17 @@ public ResponseEntity<?> createReviewWithPhotos(
      * UserId is extracted from JWT token automatically
      */
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteReview(@PathVariable UUID id) {
-        try {
-            // Get userId from JWT token
-            UUID userId = getCurrentUserId();
-            
-            reviewService.deleteReview(id, userId);
-            return ResponseEntity.noContent().build();
-        } catch (RuntimeException e) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
-        }
+public ResponseEntity<?> deleteReview(@PathVariable UUID id) {
+    try {
+        UUID userId = getCurrentUserId();
+        boolean isAdmin = isCurrentUserAdmin();
+        reviewService.deleteReview(id, userId, isAdmin);
+        return ResponseEntity.noContent().build();
+    } catch (RuntimeException e) {
+        return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                .body(Map.of("error", e.getMessage()));
     }
+}
 
     /**
      * Helper method to extract userId from JWT token
@@ -130,4 +130,10 @@ public ResponseEntity<?> createReviewWithPhotos(
         }
         throw new RuntimeException("User not authenticated");
     }
+    private boolean isCurrentUserAdmin() {
+    Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+    if (authentication == null) return false;
+    return authentication.getAuthorities().stream()
+            .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
+}
 }

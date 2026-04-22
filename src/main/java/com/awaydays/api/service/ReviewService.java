@@ -13,7 +13,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
-
+import com.awaydays.api.repository.LikeRepository;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.*;
@@ -28,6 +28,7 @@ public class ReviewService {
     private final UserRepository userRepository;
     private final PhotoRepository photoRepository;
     private final FileStorageService fileStorageService;
+    private final LikeRepository likeRepository;
 
     /**
      * Create a new review (no photos)
@@ -162,14 +163,16 @@ public class ReviewService {
      * Delete review
      */
     @Transactional
-    public void deleteReview(UUID reviewId, UUID userId) {
-        Review review = reviewRepository.findById(reviewId)
-                .orElseThrow(() -> new RuntimeException("Review not found"));
-        if (!review.getUserId().equals(userId)) {
-            throw new RuntimeException("You can only delete your own reviews");
-        }
-        reviewRepository.delete(review);
+public void deleteReview(UUID reviewId, UUID userId, boolean isAdmin) {
+    Review review = reviewRepository.findById(reviewId)
+            .orElseThrow(() -> new RuntimeException("Review not found"));
+
+    if (!isAdmin && !review.getUserId().equals(userId)) {
+        throw new RuntimeException("You can only delete your own reviews");
     }
+
+    reviewRepository.delete(review);
+}
 
     /**
      * Convert Review entity to ReviewResponse DTO
@@ -193,6 +196,8 @@ public class ReviewService {
             .map(Photo::getUrl)
             .collect(Collectors.toList());
 
+    long likeCount = likeRepository.countByReviewId(review.getId());
+
     return new ReviewResponse(
             review.getId(),
             review.getUserId(),
@@ -206,7 +211,8 @@ public class ReviewService {
             categoryRatingsMap,
             review.getCreatedAt(),
             review.getUpdatedAt(),
-            photoUrls
+            photoUrls,
+            likeCount
     );
 
     }

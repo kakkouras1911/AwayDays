@@ -57,16 +57,17 @@ public class CommentController {
      * DELETE /api/comments/{id} - Delete a comment
      */
     @DeleteMapping("/{id}")
-    public ResponseEntity<?> deleteComment(@PathVariable UUID id) {
-        try {
-            UUID userId = getCurrentUserId();
-            commentService.deleteComment(id, userId);
-            return ResponseEntity.noContent().build();
-        } catch (RuntimeException e) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                    .body(Map.of("error", e.getMessage()));
-        }
+public ResponseEntity<?> deleteComment(@PathVariable UUID id) {
+    try {
+        UUID userId = getCurrentUserId();
+        boolean isAdmin = isCurrentUserAdmin();
+        commentService.deleteComment(id, userId, isAdmin);
+        return ResponseEntity.noContent().build();
+    } catch (RuntimeException e) {
+        return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                .body(Map.of("error", e.getMessage()));
     }
+}
 
     private UUID getCurrentUserId() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
@@ -75,4 +76,11 @@ public class CommentController {
         }
         throw new RuntimeException("User not authenticated");
     }
+
+    private boolean isCurrentUserAdmin() {
+    Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+    if (authentication == null) return false;
+    return authentication.getAuthorities().stream()
+            .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
+}
 }
