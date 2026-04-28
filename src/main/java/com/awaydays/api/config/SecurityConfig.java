@@ -1,5 +1,8 @@
 package com.awaydays.api.config;
-
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.CorsConfigurationSource;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+import java.util.List;
 import com.awaydays.api.security.JwtAuthenticationFilter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
@@ -24,13 +27,16 @@ public class SecurityConfig {
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
                 .csrf(csrf -> csrf.disable())
-                .cors(cors -> cors.disable())
+                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/api/auth/**").permitAll() // Allow signup/login without auth
-                        .requestMatchers("/api/stadiums/**").permitAll() // Allow public stadium browsing
-                        .requestMatchers("/uploads/**").permitAll() // Allow public access to uploaded images
-                        .requestMatchers(HttpMethod.GET, "/api/likes/**").permitAll()
-                        .anyRequest().authenticated() // Everything else requires JWT
+                .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+                .requestMatchers("/api/auth/**").permitAll()
+                .requestMatchers("/api/stadiums/**").permitAll()
+                .requestMatchers("/uploads/**").permitAll()
+                .requestMatchers(HttpMethod.GET, "/api/reviews/**").permitAll()
+                .requestMatchers(HttpMethod.GET, "/api/comments/**").permitAll()
+                .requestMatchers(HttpMethod.GET, "/api/likes/**").permitAll()
+                .anyRequest().authenticated()
                 )
                 .sessionManagement(session -> session
                         .sessionCreationPolicy(SessionCreationPolicy.STATELESS) // No sessions, use JWT
@@ -39,4 +45,15 @@ public class SecurityConfig {
 
         return http.build();
     }
+    @Bean
+public CorsConfigurationSource corsConfigurationSource() {
+    CorsConfiguration configuration = new CorsConfiguration();
+    configuration.setAllowedOrigins(List.of("http://localhost:5173"));
+    configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+    configuration.setAllowedHeaders(List.of("*"));
+    configuration.setAllowCredentials(true);
+    return new UrlBasedCorsConfigurationSource() {{
+        registerCorsConfiguration("/**", configuration);
+    }};
+}
 }
