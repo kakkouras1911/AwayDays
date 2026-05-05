@@ -19,4 +19,5 @@ public class StadiumResponse {
     private String address;
     private String homeTeam;
     private String coverImageUrl;
+    private java.math.BigDecimal averageRating;
 }

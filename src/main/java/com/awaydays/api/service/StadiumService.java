@@ -1,7 +1,9 @@
 package com.awaydays.api.service;
 
 import com.awaydays.api.dto.response.StadiumResponse;
+import com.awaydays.api.model.Review;
 import com.awaydays.api.model.Stadiums;
+import com.awaydays.api.repository.ReviewRepository;
 import com.awaydays.api.repository.StadiumRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -10,6 +12,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -19,6 +23,7 @@ import java.util.stream.Collectors;
 public class StadiumService {
 
     private final StadiumRepository stadiumRepository;
+    private final ReviewRepository reviewRepository;
 
     /**
      * Get all stadiums with pagination and sorting
@@ -26,7 +31,6 @@ public class StadiumService {
     public Page<StadiumResponse> getAllStadiums(int page, int size, String sortBy) {
         Pageable pageable = PageRequest.of(page, size, Sort.by(sortBy).descending());
         Page<Stadiums> stadiumsPage = stadiumRepository.findAll(pageable);
-        
         return stadiumsPage.map(this::convertToResponse);
     }
 
@@ -46,7 +50,6 @@ public class StadiumService {
     public StadiumResponse getStadiumById(UUID id) {
         Stadiums stadium = stadiumRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Stadium not found with id: " + id));
-        
         return convertToResponse(stadium);
     }
 
@@ -56,7 +59,6 @@ public class StadiumService {
     public StadiumResponse getStadiumByName(String name) {
         Stadiums stadium = stadiumRepository.findByName(name)
                 .orElseThrow(() -> new RuntimeException("Stadium not found with name: " + name));
-        
         return convertToResponse(stadium);
     }
 
@@ -64,11 +66,8 @@ public class StadiumService {
      * Search stadiums by country
      */
     public List<StadiumResponse> getStadiumsByCountry(String country) {
-        List<Stadiums> stadiums = stadiumRepository.findAll().stream()
+        return stadiumRepository.findAll().stream()
                 .filter(s -> s.getCountry().equalsIgnoreCase(country))
-                .collect(Collectors.toList());
-        
-        return stadiums.stream()
                 .map(this::convertToResponse)
                 .collect(Collectors.toList());
     }
@@ -77,11 +76,8 @@ public class StadiumService {
      * Search stadiums by city
      */
     public List<StadiumResponse> getStadiumsByCity(String city) {
-        List<Stadiums> stadiums = stadiumRepository.findAll().stream()
+        return stadiumRepository.findAll().stream()
                 .filter(s -> s.getCity().equalsIgnoreCase(city))
-                .collect(Collectors.toList());
-        
-        return stadiums.stream()
                 .map(this::convertToResponse)
                 .collect(Collectors.toList());
     }
@@ -97,6 +93,18 @@ public class StadiumService {
      * Convert Stadium entity to StadiumResponse DTO
      */
     private StadiumResponse convertToResponse(Stadiums stadium) {
+        // Calculate average rating from all reviews for this stadium
+        List<Review> reviews = reviewRepository.findByStadiumId(stadium.getId());
+        BigDecimal averageRating = null;
+
+        if (!reviews.isEmpty()) {
+            BigDecimal sum = reviews.stream()
+                    .map(Review::getOverallRating)
+                    .filter(r -> r != null)
+                    .reduce(BigDecimal.ZERO, BigDecimal::add);
+            averageRating = sum.divide(BigDecimal.valueOf(reviews.size()), 1, RoundingMode.HALF_UP);
+        }
+
         return new StadiumResponse(
                 stadium.getId(),
                 stadium.getName(),
@@ -107,7 +115,8 @@ public class StadiumService {
                 stadium.getDescription(),
                 stadium.getAddress(),
                 stadium.getHomeTeam(),
-                stadium.getCoverImageUrl()
+                stadium.getCoverImageUrl(),
+                averageRating
         );
     }
 }
