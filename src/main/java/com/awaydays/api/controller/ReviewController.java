@@ -119,6 +119,23 @@ public ResponseEntity<?> deleteReview(@PathVariable UUID id) {
                 .body(Map.of("error", e.getMessage()));
     }
 }
+/**
+ * PUT /api/reviews/{id} - Update a review
+ */
+@PutMapping("/{id}")
+public ResponseEntity<?> updateReview(
+        @PathVariable UUID id,
+        @Valid @RequestBody CreateReviewRequest request
+) {
+    try {
+        UUID userId = getCurrentUserId();
+        boolean isAdmin = isCurrentUserAdmin();
+        ReviewResponse response = reviewService.updateReview(id, userId, isAdmin, request);
+        return ResponseEntity.ok(response);
+    } catch (RuntimeException e) {
+        return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+    }
+}
 
     /**
      * Helper method to extract userId from JWT token

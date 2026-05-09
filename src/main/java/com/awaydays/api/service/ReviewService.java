@@ -173,6 +173,67 @@ public void deleteReview(UUID reviewId, UUID userId, boolean isAdmin) {
 
     reviewRepository.delete(review);
 }
+/**
+ * Update a review
+ */
+@Transactional
+public ReviewResponse updateReview(UUID reviewId, UUID userId, boolean isAdmin, CreateReviewRequest request) {
+    Review review = reviewRepository.findById(reviewId)
+            .orElseThrow(() -> new RuntimeException("Review not found"));
+
+    if (!isAdmin && !review.getUserId().equals(userId)) {
+        throw new RuntimeException("You can only edit your own reviews");
+    }
+
+    // Update fields
+    review.setTitle(request.getTitle());
+    review.setContent(request.getContent());
+    review.setVisitDate(request.getVisitDate());
+
+    // Clear existing category ratings and recalculate
+    review.getCategoryRatings().clear();
+    reviewRepository.saveAndFlush(review);
+    List<BigDecimal> ratings = new ArrayList<>();
+
+    if (request.getFoodRating() != null) {
+        review.addCategoryRating(new CategoryRating("food", request.getFoodRating()));
+        ratings.add(request.getFoodRating());
+    }
+    if (request.getAtmosphereRating() != null) {
+        review.addCategoryRating(new CategoryRating("atmosphere", request.getAtmosphereRating()));
+        ratings.add(request.getAtmosphereRating());
+    }
+    if (request.getHospitalityRating() != null) {
+        review.addCategoryRating(new CategoryRating("hospitality", request.getHospitalityRating()));
+        ratings.add(request.getHospitalityRating());
+    }
+    if (request.getFacilitiesRating() != null) {
+        review.addCategoryRating(new CategoryRating("facilities", request.getFacilitiesRating()));
+        ratings.add(request.getFacilitiesRating());
+    }
+    if (request.getAccessibilityRating() != null) {
+        review.addCategoryRating(new CategoryRating("accessibility", request.getAccessibilityRating()));
+        ratings.add(request.getAccessibilityRating());
+    }
+
+    if (!ratings.isEmpty()) {
+        BigDecimal sum = BigDecimal.ZERO;
+        for (BigDecimal rating : ratings) {
+            sum = sum.add(rating);
+        }
+        review.setOverallRating(sum.divide(BigDecimal.valueOf(ratings.size()), 1, RoundingMode.HALF_UP));
+    } else {
+        review.setOverallRating(request.getOverallRating());
+    }
+
+    reviewRepository.save(review);
+    reviewRepository.flush();
+
+    Review updated = reviewRepository.findById(reviewId)
+            .orElseThrow(() -> new RuntimeException("Review not found after update"));
+
+    return convertToResponse(updated);
+}
 
     /**
      * Convert Review entity to ReviewResponse DTO
