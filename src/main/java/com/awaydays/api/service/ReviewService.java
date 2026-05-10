@@ -176,6 +176,15 @@ public void deleteReview(UUID reviewId, UUID userId, boolean isAdmin) {
 /**
  * Update a review
  */
+  /**
+ * Get recent reviews
+ */
+    public List<ReviewResponse> getRecentReviews() {
+        return reviewRepository.findTop6ByOrderByCreatedAtDesc()
+                .stream()
+                .map(this::convertToResponse)
+                .collect(Collectors.toList());
+    }
 @Transactional
 public ReviewResponse updateReview(UUID reviewId, UUID userId, boolean isAdmin, CreateReviewRequest request) {
     Review review = reviewRepository.findById(reviewId)
@@ -258,6 +267,8 @@ public ReviewResponse updateReview(UUID reviewId, UUID userId, boolean isAdmin, 
             .collect(Collectors.toList());
 
     long likeCount = likeRepository.countByReviewId(review.getId());
+    
+  
 
     return new ReviewResponse(
             review.getId(),

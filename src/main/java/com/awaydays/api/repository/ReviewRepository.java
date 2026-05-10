@@ -21,4 +21,5 @@ public interface ReviewRepository extends JpaRepository<Review, UUID> {
     
     // Count reviews for a stadium
     Long countByStadiumId(UUID stadiumId);
+    List<Review> findTop6ByOrderByCreatedAtDesc();
 }

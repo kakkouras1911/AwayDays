@@ -120,6 +120,14 @@ public ResponseEntity<?> deleteReview(@PathVariable UUID id) {
     }
 }
 /**
+ * GET /api/reviews/recent - Get recent reviews
+ */
+@GetMapping("/recent")
+public ResponseEntity<List<ReviewResponse>> getRecentReviews() {
+    List<ReviewResponse> reviews = reviewService.getRecentReviews();
+    return ResponseEntity.ok(reviews);
+}
+/**
  * PUT /api/reviews/{id} - Update a review
  */
 @PutMapping("/{id}")
